@@ -1,0 +1,11 @@
+{
+    "theme": "Liquid Cyan",
+    "registry_path": null,
+    "google_creds_path": "C:/Users/nikol/OneDrive/Рабочий стол/credentials.json",
+    "google_url": "https://docs.google.com/spreadsheets/d/1Y4PNPdB20_K-3YW3vu3OYTrInqXWu8Ss6w7x-STUHJA/edit?gid=1973299245#gid=1973299245",
+    "registry_mode": "google",
+    "ai_api_key": "sk-W02LrjSK9PapzakiwgjkP0IBkFN7p3rE",
+    "ai_base_url": "https://api.proxyapi.ru/v1",
+    "ai_model": "google/gemma-4-26b-a4b-it",
+    "ai_workers": 10
+}
