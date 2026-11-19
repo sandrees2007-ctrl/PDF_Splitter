@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="liquid-cyan">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Умная разбивка PDF-протоколов • Liquid Glass Suite</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ═══════════════════════════════════════════════════════
+       1. ANIMATED LIQUID GLASS HEADER
+       ═══════════════════════════════════════════════════════ -->
+  <header class="header" id="appHeader">
+    <div class="header-specular"></div>
+    <div class="header-badge">🧪</div>
+    <div class="header-text">
+      <div class="header-title">STROYLAB INTELLIGENCE SUITE • LIQUID GLASS v3.0</div>
+      <div class="header-subtitle">Умная разбивка &amp; Реестр протоколов</div>
+    </div>
+    <div class="header-status" id="statusPill">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">СИСТЕМА ГОТОВА К РАБОТЕ</span>
+    </div>
+    <button class="btn header-settings-btn" id="btnOpenSettings">⚙ Настройки</button>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════
+       2. CARD 1 — FILE SELECT (drag & drop)
+       ═══════════════════════════════════════════════════════ -->
+  <div class="glass-card drop-zone" id="dropZone">
+    <div class="card-row">
+      <button class="btn" id="btnSelectFiles">📁&ensp;1. Выбрать PDF файлы</button>
+      <div class="card-info">
+        <div class="card-badge" id="fileBadge">● Ожидание выбора файлов</div>
+        <div class="card-desc" id="fileDesc">Перетащите или укажите PDF файлы сканов строительных протоколов</div>
+      </div>
+    </div>
+    <input type="file" class="hidden-input" id="fileInput" multiple accept=".pdf">
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       3. CARD 2 — OUTPUT DIRECTORY (info)
+       ═══════════════════════════════════════════════════════ -->
+  <div class="glass-card">
+    <div class="card-row">
+      <button class="btn" disabled>📂&ensp;2. Папка сохранения</button>
+      <div class="card-info">
+        <div class="card-badge" id="dirBadge">● Структурированный каталог вывода</div>
+        <div class="card-desc" id="dirDesc">Рядом с исходными файлами (автоматическая разбивка по корпусам и префиксам)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       4. CARD 3 — REGISTRY SELECT (radio buttons)
+       ═══════════════════════════════════════════════════════ -->
+  <div class="glass-card">
+    <div class="registry-top">
+      <span class="registry-label">📊&ensp;3. Целевой реестр бетонирования:</span>
+      <div class="radio-group">
+        <label class="radio-item">
+          <input type="radio" name="registryMode" value="local" checked>
+          Локальный Excel (.xlsx)
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="registryMode" value="google">
+          Google Таблица (Облако)
+        </label>
+      </div>
+    </div>
+
+    <!-- Local Excel panel -->
+    <div class="registry-panel active" id="panelLocal">
+      <button class="btn" id="btnSelectRegistry">Выбрать Excel файл</button>
+      <span class="card-desc" id="registryDesc">Файл реестра не выбран (запись в существующий реестр отключена)</span>
+      <input type="file" class="hidden-input" id="registryInput" accept=".xlsx,.xls">
+    </div>
+
+    <!-- Google Sheets panel -->
+    <div class="registry-panel" id="panelGoogle">
+      <input type="text" id="googleUrl" placeholder="Вставьте ссылку на Google Таблицу...">
+      <button class="btn" id="btnUploadCreds">Ключ credentials.json</button>
+      <input type="file" class="hidden-input" id="credsInput" accept=".json">
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       5. ACTION BUTTONS
+       ═══════════════════════════════════════════════════════ -->
+  <div class="actions-row">
+    <button class="btn btn-primary disabled" id="btnStart">✨&ensp;НАЧАТЬ ОБРАБОТКУ&ensp;(PDF ➔ Excel ➔ Google Таблица)</button>
+    <button class="btn btn-secondary" id="btnIntegrate">⚡&ensp;ТОЛЬКО ИНТЕГРАЦИЯ</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       6. LIQUID GLASS PROGRESS BAR
+       ═══════════════════════════════════════════════════════ -->
+  <div class="progress-header">
+    <span class="progress-label">Прогресс анализа и классификации:</span>
+    <span class="progress-pct" id="progressPct">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-breath"></div>
+    <div class="progress-fill" id="progressFill">
+      <div class="shimmer"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       7. AI LOG TERMINAL (HUD Console)
+       ═══════════════════════════════════════════════════════ -->
+  <div class="glass-card terminal-card">
+    <div class="term-bar">
+      <div class="term-dots">
+        <span class="term-dot red"></span>
+        <span class="term-dot yellow"></span>
+        <span class="term-dot green"></span>
+      </div>
+      <span class="term-title">✦ ТЕРМИНАЛ ИИ-РАСПОЗНАВАНИЯ &amp; ВАЛИДАЦИИ</span>
+      <span class="term-info" id="termInfo">ProxyAPI • google/gemma-4-26b-a4b-it • 150 DPI</span>
+    </div>
+    <div class="term-body" id="termBody"></div>
+  </div>
+
+</div><!-- /.app-container -->
+
+<!-- ═══════════════════════════════════════════════════════
+     8. SETTINGS MODAL
+     ═══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚙&ensp;ПАРАМЕТРЫ СИСТЕМЫ И ИИ-РОУТЕРА</h2>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <div class="field-title">🎨 Тема жидкого стекла:</div>
+        <select id="settTheme">
+          <option value="liquid-cyan">Liquid Cyan</option>
+          <option value="liquid-emerald">Liquid Emerald</option>
+          <option value="liquid-amethyst">Liquid Amethyst</option>
+          <option value="liquid-sunset">Liquid Sunset</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-title">⚡ ИИ-Роутер (ProxyAPI):</div>
+        <label>ProxyAPI API Key:</label>
+        <input type="password" id="settApiKey">
+      </div>
+      <div class="field-group">
+        <label>Base URL:</label>
+        <input type="text" id="settBaseUrl">
+      </div>
+      <div class="field-group">
+        <label>Модель распознавания:</label>
+        <select id="settModel">
+          <option value="google/gemma-4-26b-a4b-it">gemma-4-26b-a4b-it</option>
+          <option value="gpt-4o-mini">gpt-4o-mini</option>
+          <option value="google/gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+          <option value="google/gemini-2.5-flash">gemini-2.5-flash</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Параллельных потоков (Workers):</label>
+        <select id="settWorkers">
+          <option value="5">5</option>
+          <option value="8">8</option>
+          <option value="10" selected>10</option>
+          <option value="12">12</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-save" id="btnSaveSettings">Сохранить настройки</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT — Backend Communication & UI Logic
+     ═══════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ── Theme mapping (data-theme ↔ server name) ── */
+  const THEME_MAP = {
+    'liquid-cyan':     'Liquid Cyan',
+    'liquid-emerald':  'Liquid Emerald',
+    'liquid-amethyst': 'Liquid Amethyst',
+    'liquid-sunset':   'Liquid Sunset'
+  };
+  const THEME_REV = Object.fromEntries(Object.entries(THEME_MAP).map(([k,v]) => [v, k]));
+
+  /* ── DOM refs ── */
+  const $ = id => document.getElementById(id);
+
+  const dropZone      = $('dropZone');
+  const fileInput      = $('fileInput');
+  const btnSelectFiles = $('btnSelectFiles');
+  const fileBadge      = $('fileBadge');
+  const fileDesc       = $('fileDesc');
+
+  const dirBadge       = $('dirBadge');
+  const dirDesc        = $('dirDesc');
+
+  const btnSelectReg   = $('btnSelectRegistry');
+  const registryInput  = $('registryInput');
+  const registryDesc   = $('registryDesc');
+  const panelLocal     = $('panelLocal');
+  const panelGoogle    = $('panelGoogle');
+  const googleUrl      = $('googleUrl');
+  const btnUploadCreds = $('btnUploadCreds');
+  const credsInput     = $('credsInput');
+
+  const btnStart       = $('btnStart');
+  const btnIntegrate   = $('btnIntegrate');
+
+  const progressFill   = $('progressFill');
+  const progressPct    = $('progressPct');
+
+  const statusDot      = $('statusDot');
+  const statusText     = $('statusText');
+  const termInfo       = $('termInfo');
+  const termBody       = $('termBody');
+
+  const settingsOverlay = $('settingsOverlay');
+  const settTheme       = $('settTheme');
+  const settApiKey      = $('settApiKey');
+  const settBaseUrl     = $('settBaseUrl');
+  const settModel       = $('settModel');
+  const settWorkers     = $('settWorkers');
+
+  /* ── State ── */
+  let uploadedFiles = [];
+  let currentTaskId = null;
+  let eventSource   = null;
+  let isProcessing  = false;
+
+  /* ── Helpers ── */
+  function logLine(msg, cls) {
+    const el = document.createElement('div');
+    el.className = 'log-line' + (cls ? ' ' + cls : '');
+    el.textContent = msg;
+    termBody.appendChild(el);
+    termBody.scrollTop = termBody.scrollHeight;
+  }
+
+  function classifyLog(msg) {
+    const m = msg.toLowerCase();
+    if (m.includes('[ошибка]') || m.includes('[error]') || m.includes('❌')) return 'error';
+    if (m.includes('[warn]') || m.includes('⚠')) return 'warn';
+    if (m.includes('[ok]') || m.includes('✅') || m.includes('✔') || m.includes('✓')) return 'ok';
+    if (m.startsWith('[*]') || m.includes('✨') || m.includes('🧪')) return 'info';
+    return '';
+  }
+
+  function setProgress(val) {
+    const pct = Math.round(val * 100);
+    progressFill.style.width = pct + '%';
+    progressPct.textContent  = pct + '%';
+  }
+
+  function setProcessing(active) {
+    isProcessing = active;
+    statusDot.classList.toggle('active', active);
+    statusText.textContent = active
+      ? 'ИИ-АНАЛИЗ И СБОРКА ПРОТОКОЛОВ...'
+      : 'СИСТЕМА ГОТОВА К РАБОТЕ';
+    btnStart.classList.toggle('disabled', active || uploadedFiles.length === 0);
+    if (active) {
+      btnStart.setAttribute('disabled', '');
+    } else if (uploadedFiles.length > 0) {
+      btnStart.removeAttribute('disabled');
+    }
+  }
+
+  function applyTheme(slug) {
+    document.documentElement.setAttribute('data-theme', slug);
+    settTheme.value = slug;
+  }
+
+  /* ── Settings load / save ── */
+  async function loadSettings() {
+    try {
+      const r = await fetch('/api/settings');
+      if (!r.ok) return;
+      const s = await r.json();
+      const slug = THEME_REV[s.theme] || 'liquid-cyan';
+      applyTheme(slug);
+      settApiKey.value   = s.ai_api_key  || '';
+      settBaseUrl.value  = s.ai_base_url || '';
+      settModel.value    = s.ai_model    || 'google/gemma-4-26b-a4b-it';
+      settWorkers.value  = String(s.ai_workers || 10);
+      termInfo.textContent = `ProxyAPI • ${s.ai_model || 'google/gemma-4-26b-a4b-it'} • 150 DPI`;
+      if (s.output_dir) {
+        dirBadge.textContent = '● Структурированный каталог вывода';
+        dirDesc.textContent  = s.output_dir;
+      }
+      if (s.google_url) googleUrl.value = s.google_url;
+      if (s.registry_mode === 'google') {
+        document.querySelector('input[name="registryMode"][value="google"]').checked = true;
+        panelLocal.classList.remove('active');
+        panelGoogle.classList.add('active');
+      }
+    } catch(e) {
+      console.warn('Settings load failed', e);
+    }
+  }
+
+  async function saveSettings() {
+    const theme = THEME_MAP[settTheme.value] || 'Liquid Cyan';
+    const body = {
+      theme:       theme,
+      ai_api_key:  settApiKey.value,
+      ai_base_url: settBaseUrl.value,
+      ai_model:    settModel.value,
+      ai_workers:  parseInt(settWorkers.value) || 10,
+      registry_mode: document.querySelector('input[name="registryMode"]:checked').value,
+      google_url:  googleUrl.value
+    };
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      applyTheme(settTheme.value);
+      termInfo.textContent = `ProxyAPI • ${settModel.value} • 150 DPI`;
+      logLine('[*] Настройки сохранены ✓', 'ok');
+    } catch(e) {
+      logLine('[ошибка] Не удалось сохранить настройки', 'error');
+    }
+    settingsOverlay.classList.remove('visible');
+  }
+
+  /* ── File upload ── */
+  async function uploadFiles(files) {
+    if (!files || files.length === 0) return;
+    const fd = new FormData();
+    for (const f of files) fd.append('files', f);
+
+    fileBadge.textContent = '⏳ Загрузка файлов...';
+    fileBadge.classList.remove('ready');
+
+    try {
+      const r = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await r.json();
+      uploadedFiles = data.files || [];
+      const n = uploadedFiles.length;
+      fileBadge.textContent = `✨ Готово к обработке: ${n} PDF`;
+      fileBadge.classList.add('ready');
+      const firstName = uploadedFiles[0] || '';
+      const extra = n > 1 ? ` (+ ещё ${n - 1} файлов)` : '';
+      fileDesc.textContent = firstName + extra;
+      btnStart.classList.remove('disabled');
+      btnStart.removeAttribute('disabled');
+      logLine(`[*] Выбрано файлов для обработки: ${n}`, 'info');
+    } catch(e) {
+      fileBadge.textContent = '● Ошибка загрузки';
+      logLine('[ошибка] Не удалось загрузить файлы: ' + e.message, 'error');
+    }
+  }
+
+  /* ── Registry upload ── */
+  async function uploadRegistry(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const r = await fetch('/api/upload-registry', { method: 'POST', body: fd });
+      const data = await r.json();
+      registryDesc.textContent = data.filename || file.name;
+      logLine(`[*] Выбран Excel-реестр: ${file.name}`, 'info');
+    } catch(e) {
+      logLine('[ошибка] Не удалось загрузить реестр', 'error');
+    }
+  }
+
+  /* ── Credentials upload ── */
+  async function uploadCreds(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      await fetch('/api/upload-creds', { method: 'POST', body: fd });
+      btnUploadCreds.textContent = 'Ключ выбран ✓';
+      btnUploadCreds.style.background = '#10B981';
+      logLine(`[*] Выбран ключ Google API: ${file.name}`, 'info');
+    } catch(e) {
+      logLine('[ошибка] Не удалось загрузить credentials', 'error');
+    }
+  }
+
+  /* ── SSE stream ── */
+  function startSSE(taskId) {
+    if (eventSource) eventSource.close();
+    eventSource = new EventSource(`/api/status/${taskId}`);
+
+    eventSource.onmessage = function(ev) {
+      try {
+        const d = JSON.parse(ev.data);
+        if (d.type === 'log') {
+          logLine(d.message, classifyLog(d.message));
+        } else if (d.type === 'progress') {
+          setProgress(d.value);
+        } else if (d.type === 'done') {
+          setProcessing(false);
+          setProgress(1);
+          logLine('═══════════════════════════════════════', 'info');
+          logLine('✅ Обработка завершена!', 'ok');
+          if (d.files && d.files.length) {
+            d.files.forEach(function(f) {
+              const a = document.createElement('a');
+              a.href = '/api/download/' + encodeURIComponent(f);
+              a.textContent = '📥 Скачать: ' + f;
+              a.style.cssText = 'display:block;color:var(--accent);margin:4px 0;text-decoration:underline;font-family:Consolas;font-size:12px';
+              termBody.appendChild(a);
+              termBody.scrollTop = termBody.scrollHeight;
+            });
+          }
+          eventSource.close();
+          eventSource = null;
+        } else if (d.type === 'error') {
+          logLine('[ошибка] ' + d.message, 'error');
+          setProcessing(false);
+          eventSource.close();
+          eventSource = null;
+        }
+      } catch(e) {
+        logLine(ev.data);
+      }
+    };
+
+    eventSource.onerror = function() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+      if (isProcessing) {
+        logLine('[warn] Соединение SSE прервано', 'warn');
+        setProcessing(false);
+      }
+    };
+  }
+
+  /* ── Start processing ── */
+  async function startProcessing() {
+    if (isProcessing || uploadedFiles.length === 0) return;
+    setProcessing(true);
+    setProgress(0);
+    logLine('═══════════════════════════════════════', 'info');
+    logLine('🧪 Запуск ИИ-обработки протоколов...', 'info');
+
+    try {
+      const body = {
+        registry_mode: document.querySelector('input[name="registryMode"]:checked').value,
+        google_url: googleUrl.value
+      };
+      const r = await fetch('/api/process', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      const data = await r.json();
+      if (data.task_id) {
+        currentTaskId = data.task_id;
+        startSSE(currentTaskId);
+      } else {
+        logLine('[ошибка] Не удалось запустить обработку', 'error');
+        setProcessing(false);
+      }
+    } catch(e) {
+      logLine('[ошибка] ' + e.message, 'error');
+      setProcessing(false);
+    }
+  }
+
+  /* ── Integrate only ── */
+  async function integrateOnly() {
+    if (isProcessing) return;
+    setProcessing(true);
+    logLine('⚡ Запуск интеграции...', 'info');
+
+    try {
+      const body = {
+        registry_mode: document.querySelector('input[name="registryMode"]:checked').value,
+        google_url: googleUrl.value
+      };
+      const r = await fetch('/api/integrate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      const data = await r.json();
+      if (data.task_id) {
+        currentTaskId = data.task_id;
+        startSSE(currentTaskId);
+      } else {
+        logLine('[ошибка] ' + (data.error || 'Ошибка интеграции'), 'error');
+        setProcessing(false);
+      }
+    } catch(e) {
+      logLine('[ошибка] ' + e.message, 'error');
+      setProcessing(false);
+    }
+  }
+
+  /* ── Event listeners ── */
+
+  // File select
+  btnSelectFiles.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => uploadFiles(fileInput.files));
+
+  // Drag & Drop
+  ['dragenter','dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, e => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+  });
+  ['dragleave','drop'].forEach(evt => {
+    dropZone.addEventListener(evt, e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+    });
+  });
+  dropZone.addEventListener('drop', e => {
+    const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+    if (files.length) {
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      fileInput.files = dt.files;
+      uploadFiles(files);
+    }
+  });
+
+  // Registry mode toggle
+  document.querySelectorAll('input[name="registryMode"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const isLocal = r.value === 'local' && r.checked;
+      panelLocal.classList.toggle('active',  r.value === 'local'  && r.checked || (!r.checked && r.value === 'google'));
+      panelGoogle.classList.toggle('active', r.value === 'google' && r.checked || (!r.checked && r.value === 'local'));
+      // simpler logic:
+      if (document.querySelector('input[name="registryMode"]:checked').value === 'local') {
+        panelLocal.classList.add('active');
+        panelGoogle.classList.remove('active');
+      } else {
+        panelLocal.classList.remove('active');
+        panelGoogle.classList.add('active');
+      }
+    });
+  });
+
+  // Registry file select
+  btnSelectReg.addEventListener('click', () => registryInput.click());
+  registryInput.addEventListener('change', () => {
+    if (registryInput.files.length) uploadRegistry(registryInput.files[0]);
+  });
+
+  // Credentials select
+  btnUploadCreds.addEventListener('click', () => credsInput.click());
+  credsInput.addEventListener('change', () => {
+    if (credsInput.files.length) uploadCreds(credsInput.files[0]);
+  });
+
+  // Action buttons
+  btnStart.addEventListener('click', startProcessing);
+  btnIntegrate.addEventListener('click', integrateOnly);
+
+  // Settings modal
+  $('btnOpenSettings').addEventListener('click', () => settingsOverlay.classList.add('visible'));
+  settingsOverlay.addEventListener('click', e => {
+    if (e.target === settingsOverlay) settingsOverlay.classList.remove('visible');
+  });
+  $('btnSaveSettings').addEventListener('click', saveSettings);
+
+  // Theme live-preview in modal
+  settTheme.addEventListener('change', () => applyTheme(settTheme.value));
+
+  /* ── Init ── */
+  loadSettings();
+  logLine('[*] Liquid Glass Web UI инициализирован', 'info');
+  logLine('[*] Система готова к работе', 'ok');
+
+})();
+</script>
+</body>
+</html>

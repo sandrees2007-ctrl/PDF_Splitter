@@ -1,1 +1,11 @@
-﻿source_code/credentials.json`n
+__pycache__/
+*.pyc
+*.pyo
+debug_log.txt
+credentials.json
+settings.json
+archive/
+uploads/*
+output/*
+!uploads/.gitkeep
+!output/.gitkeep

@@ -1,0 +1,11 @@
+{
+    "theme": "Liquid Cyan",
+    "registry_path": null,
+    "google_creds_path": null,
+    "google_url": "",
+    "registry_mode": "local",
+    "ai_api_key": "YOUR_API_KEY_HERE",
+    "ai_base_url": "https://api.proxyapi.ru/v1",
+    "ai_model": "google/gemma-4-26b-a4b-it",
+    "ai_workers": 10
+}
